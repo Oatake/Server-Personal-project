@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  userName String @unique @map("user_name")
+  password String
+  Role     Role?   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId   Int?  
+
+  @@map("user")
+}
+
+model Role {
+  id            Int     @id @default(autoincrement())
+  isAdmin       Boolean @map("is_admin")
+  isReception   Boolean @map("is_reception")
+  isButler      Boolean @map("is_butler")
+  isKitchenHand Boolean @map("is_kitchen_hand")
+  Users         User[]
+
+  @@map("role")
+}
+
+model Table {
+  id        Int         @id @default(autoincrement())
+  tableName String      @unique @map("table_name")
+  status    TableStatus @default(AVAILABLE)
+  Orders    Order[]
+
+  @@map("table")
+}
+
+enum TableStatus {
+  AVAILABLE
+  ORDERING
+  WAITING
+  EATING
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  isPaid     Boolean     @map("is_paid")
+  totalPrice Decimal     @map("total_price")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  Table      Table       @relation(fields: [tableId], references: [id])
+  tableId    Int         @map("table_id")
+  OrderItems  OrderItem[]
+
+  @@map("order")
+}
+
+model Recipe {
+  id          Int         @id @default(autoincrement())
+  title       String      @unique
+  description String
+  price       Decimal
+  isHide      Boolean     @map("is_hide") @default(false)
+  Category    Category    @relation(fields: [categoryId], references: [id])
+  categoryId  Int         @map("category_id")
+  OrderItems  OrderItem[]
+}
+
+model Category {
+  id           Int      @id @default(autoincrement())
+  categoryName String   @map("category_name")
+  Recipes      Recipe[]
+}
+
+model OrderItem {
+  id       Int    @id @default(autoincrement())
+  amount   Int
+  status  OrderStatus @default(COOKING)
+  Recipe   Recipe @relation(fields: [recipeId], references: [id])
+  recipeId Int    @map("recipe_id")
+  Order    Order  @relation(fields: [orderId], references: [id])
+  orderId  Int @map("order_id")
+}
+
+enum OrderStatus{
+  COOKING
+  DONE
+}
